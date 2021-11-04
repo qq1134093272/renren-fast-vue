@@ -3,12 +3,15 @@
     :title="!dataForm.id ? '新增' : '修改'"
     :close-on-click-modal="false"
     :visible.sync="visible">
-    <el-form :model="dataForm" :rules="dataRule" ref="dataForm" @keyup.enter.native="dataFormSubmit()" label-width="120px">
-      <el-form-item label="参数名" prop="paramKey">
-        <el-input v-model="dataForm.paramKey" placeholder="参数名"></el-input>
+    <el-form :model="dataForm" :rules="dataRule" ref="dataForm" @keyup.enter.native="dataFormSubmit()" label-width="100px">
+      <el-form-item label="bean名称" prop="beanName">
+        <el-input v-model="dataForm.beanName" placeholder="spring bean名称, 如: testTask"></el-input>
       </el-form-item>
-      <el-form-item label="参数值" prop="paramValue">
-        <el-input v-model="dataForm.paramValue" placeholder="参数值"></el-input>
+      <el-form-item label="参数" prop="params">
+        <el-input v-model="dataForm.params" placeholder="参数"></el-input>
+      </el-form-item>
+      <el-form-item label="cron表达式" prop="cronExpression">
+        <el-input v-model="dataForm.cronExpression" placeholder="如: 0 0 12 * * ?"></el-input>
       </el-form-item>
       <el-form-item label="备注" prop="remark">
         <el-input v-model="dataForm.remark" placeholder="备注"></el-input>
@@ -28,16 +31,18 @@
         visible: false,
         dataForm: {
           id: 0,
-          paramKey: '',
-          paramValue: '',
-          remark: ''
+          beanName: '',
+          params: '',
+          cronExpression: '',
+          remark: '',
+          status: 0
         },
         dataRule: {
-          paramKey: [
-            { required: true, message: '参数名不能为空', trigger: 'blur' }
+          beanName: [
+            { required: true, message: '用户名不能为空', trigger: 'blur' }
           ],
-          paramValue: [
-            { required: true, message: '参数值不能为空', trigger: 'blur' }
+          cronExpression: [
+            { required: true, message: 'cron表达式不能为空', trigger: 'blur' }
           ]
         }
       }
@@ -50,14 +55,16 @@
           this.$refs['dataForm'].resetFields()
           if (this.dataForm.id) {
             this.$http({
-              url: this.$http.adornUrl(`/sys/config/info/${this.dataForm.id}`),
+              url: this.$http.adornUrl(`/sys/schedule/info/${this.dataForm.id}`),
               method: 'get',
               params: this.$http.adornParams()
             }).then(({data}) => {
               if (data && data.code === 0) {
-                this.dataForm.paramKey = data.config.paramKey
-                this.dataForm.paramValue = data.config.paramValue
-                this.dataForm.remark = data.config.remark
+                this.dataForm.beanName = data.schedule.beanName
+                this.dataForm.params = data.schedule.params
+                this.dataForm.cronExpression = data.schedule.cronExpression
+                this.dataForm.remark = data.schedule.remark
+                this.dataForm.status = data.schedule.status
               }
             })
           }
@@ -68,13 +75,15 @@
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
             this.$http({
-              url: this.$http.adornUrl(`/sys/config/${!this.dataForm.id ? 'save' : 'update'}`),
+              url: this.$http.adornUrl(`/sys/schedule/${!this.dataForm.id ? 'save' : 'update'}`),
               method: 'post',
               data: this.$http.adornData({
-                'id': this.dataForm.id || undefined,
-                'paramKey': this.dataForm.paramKey,
-                'paramValue': this.dataForm.paramValue,
-                'remark': this.dataForm.remark
+                'jobId': this.dataForm.id || undefined,
+                'beanName': this.dataForm.beanName,
+                'params': this.dataForm.params,
+                'cronExpression': this.dataForm.cronExpression,
+                'remark': this.dataForm.remark,
+                'status': !this.dataForm.id ? undefined : this.dataForm.status
               })
             }).then(({data}) => {
               if (data && data.code === 0) {
